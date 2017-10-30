@@ -1,0 +1,30 @@
+html, body {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	overflow: hidden;
+}
+
+#display {
+	position: absolute;
+	left: 0;
+	top: 0;
+	z-index: -1;
+}
+
+#visualize {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100px;
+	height: 50px;
+	z-index: 1;
+}
+
+#javascript {
+	position: absolute;
+	top: 50px;
+	left: 0;
+	z-index: 1;
+}
+
