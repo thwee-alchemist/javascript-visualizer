@@ -380,9 +380,8 @@ var FourD = function(){
     geometry.dynamic = true;
     
     if(options.texture !== undefined){
-
       material_args = { 
-        map: THREE.ImageUtils.loadTexture( options.texture )
+        map: new THREE.TextureLoader().load( options.texture )
       };
       
     }else{
@@ -396,8 +395,9 @@ var FourD = function(){
     
     var cube = new THREE.Mesh( geometry, material );
     var scale = 2;
-    cube.position = new THREE.Vector3(
-      Math.random() * scale, Math.random() * scale,
+    cube.position.set(
+      Math.random() * scale, 
+      Math.random() * scale,
       Math.random() * scale
     );
     cube.matrixAutoUpdate = true;
@@ -686,14 +686,18 @@ var FourD = function(){
       camera,
       light,
       renderer,
-      graph;
+      graph,
+      controls,
+      clock;
 
   var render = function render(){
     requestAnimationFrame(render);
     graph.layout();
+    controls.update(clock.getDelta());
     renderer.render(scene, camera);
-    camera.position.z = graph.center.z - CONSTANTS.zoom;
-    camera.lookAt(graph.center);
+    
+    //camera.position.z = graph.center.z - CONSTANTS.zoom;
+    //camera.lookAt(graph.center);
   };
 
   var clear = function clear(){
@@ -723,6 +727,8 @@ var FourD = function(){
     renderer.setClearColor(0xefefef);
     renderer.setSize( options.width, options.height );
     
+    THREEx.WindowResize(renderer, camera);
+    
     document.querySelector(selector).appendChild( renderer.domElement );
     
     graph = new Graph(scene);
@@ -730,6 +736,15 @@ var FourD = function(){
     camera.position.z = -250;
     camera.lookAt(new THREE.Vector3(0, 0, 0));
 
+    clock = new THREE.Clock();
+    controls = new THREE.FlyControls( camera );
+    controls.update(clock.getDelta()); 
+    controls.movementSpeed = 100;
+		controls.domElement = renderer.domElement;
+		controls.rollSpeed = Math.PI / 12;
+		controls.autoForward = false;
+		controls.dragToLook = true;
+    
     that._internals = {
       scene: scene,
       element: element,
