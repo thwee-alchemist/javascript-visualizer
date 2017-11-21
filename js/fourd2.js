@@ -1,79 +1,10 @@
 'use strict';
-/*
- four-d.js
- Joshua M. Moore
- April 23, 2015
-
- depends on: mrdoob's three.js, rev66
- https://github.com/mrdoob/three.js/tree/r66
- tested with r66
- 
- This is semantic version v0.1.0.
- See http://semver.org/
- 
- The API works as follows:
- Every function or code block marked api is part of the API.
- 
- Here's how it works:
- 
- var fourd = new FourD(); // instantiation
- fourd.init('#selector', {width: 600, height: 350}); // initialization
- 
- 
- var vertex_options = {
-   width: 5, // pixels
-   height: 5,
-   depth: 5,
-   color: 0x000000 // hex color
- };
- 
- var vertex_options = {
-   cube: {
-     width: 5, 
-     height: 5,
-     depth: 5,
-     color: 0x000000 // or: texture: 'path_to.png'
-     offset: Offset('bottom', 0) // optional
-   },
-   label: {
-     text: 
-   }
- }
- 
- // or:
- 
- var vertex_options = {
-   width: 5,
-   height: 5,
-   depth: 5,
-   texture: 'path_to,png'
- }
- 
- // or:
- 
- // leave out vertex options altogether.
- // default values will be used.
- 
- 
- var vertex1 = fourd.graph.add_vertex(vertex_options); // add a vertex
- var vertex2 = fourd.graph.add_vertex(vertex_options); // add another vertex
- 
- var edge_options = {}; // currently not defined, but this is how you would pass them.
- 
- var edge = fourd.graph.add_edge(vertex1, vertex2, edge_options);
- 
- fourd.graph.remove_edge(edge); // this is why you keep those variables
- fourd.graph.remove_vertex(vertex1);
- fourd.graph.remove_vertex(vertex2);
- 
-*/
 
 var FourD = function(){
-
   var that = this;
-  var CONSTANTS = {
+	var CONSTANTS = {
     width: 1000,
-    attraction: 0.05,
+    attraction: 0.025,
     far: 1000,
     optimal_distance: 1.0,
     minimum_velocity: 0.001,
@@ -92,20 +23,7 @@ var FourD = function(){
       potential.hasOwnProperty('edge_count') && 
       potential.hasOwnProperty('edges');
   };
-
-  /* 
-    Vertex
-    
-    Creates a vertex which can be passed to Graph. 
-    setting a label property in the options parameter can allow
-    for a label to be drawn above or below a vertex. 
-    
-    Options:
-    - invisible
-    - see cube
-    - see label
-    
-  */
+  
   var Vertex = function(id, options){
     this.options = options;
     this.id = id;
@@ -131,51 +49,44 @@ var FourD = function(){
       };
     };
   };
-
-  var getPicture = function(options){
+  
+  var getPicture = function(message){
     var canvas = document.createElement('canvas');
     var context = canvas.getContext('2d');
-    var fontSize = options.size || 100;
+    var fontSize = 24;
     context.font = fontSize + "px Times New Roman";
-    var measurements = context.measureText(options.text);
+    var measurements = context.measureText(message);
     //canvas.width = measurements.width + 10;
     //canvas.height = fontSize + 2;
-    context.width = context.height = measurements.width * fontSize;
-    context.fillText(options.text, 0, fontSize);
+    context.width = context.height = measurements.width + 10;
+    context.fillText(message, 0, fontSize);
     
     return canvas;
   };
 
   var Label = function(options){
-    var texture = new THREE.Texture(getPicture(options));
+    var texture = new THREE.Texture(getPicture(text));
     texture.minFilter = THREE.LinearFilter; // ?
     texture.needsUpdate = true;
     var material = new THREE.SpriteMaterial({map: texture});
     var sprite = new THREE.Sprite(material);
     return sprite;
-  };
+  }
   
   Vertex.prototype.paint = function(scene){
     this.object = new THREE.Group();
-    this.object.position.set(
-      Math.random(),
-      Math.random(),
-      Math.random()
-    );
     
     if(this.options.cube){
       var cube = new Cube(this.options.cube);
-      this.object.add(cube);
       cube.position.set(0, 0, 0);
+      this.object.add(cube);
     }
     if(this.options.label){
       var label = new Label(this.options.label);
-      //scene.add(label);
-      this.object.add(label);
-      label.position.set(0, this.options.cube ? this.options.cube.size*(-1)*0.5 : 0, 0);
-      // label.position.set(0, 0, 0);
+      label.position.set(0, this.options.cube ? this.options.cube.size*1.25 : 0, 0);
+      this.object.add(cube);
     }
-    
+      
     scene.add(this.object);
   }
   
@@ -187,8 +98,8 @@ var FourD = function(){
   Vertex.prototype.remove = function(name){
     this.object.remove(name)
   }
-
-  // Edge
+  
+    // Edge
   var Edge = function(id, source, target, options){
     this.options = options === undefined ? {strength: 1.0} : options;
     
@@ -224,15 +135,15 @@ var FourD = function(){
 
     this.order = Math.random();
   };
-
+  
   Edge.prototype.paint = function(scene){
     this.object = line(scene, this.source, this.target, this.options);
   };
-
+  
   Edge.prototype.toString = function(){
     return this.source.toString() + '-->' + this.target.toString(); 
   };
-
+  
   Edge.prototype.destroy = function(scene){
     delete this.source.edges[this.id];
     delete this.target.edges[this.id];
@@ -243,7 +154,7 @@ var FourD = function(){
     this.source.edge_count--;
     this.target.edge_count--;
   };
-
+  
   // Graph
   var Graph = function(scene){
     this.scene = scene;
@@ -256,8 +167,7 @@ var FourD = function(){
 
     this.edge_counts = {};
   };
-
-  // api
+  
   Graph.prototype.clear = function(){
 
     for(var e in this.E){
@@ -276,12 +186,11 @@ var FourD = function(){
     this.edge_id_spawn = 0;
     this.vertex_id_spawn = 0;
   };
-
+  
   Graph.prototype._make_key = function(source, target){
     return '_' + source.toString() + '_' + target.toString();
   };
-
-  // api
+  
   Graph.prototype.add_vertex = function(options){
     var v = new Vertex(this.vertex_id_spawn++, options);
     v.paint(this.scene);
@@ -289,7 +198,7 @@ var FourD = function(){
 
     return v;
   };
-
+  
   // api
   Graph.prototype.add_edge = function(source, target, options){
     var key = '_' + source.id + '_' + target.id;
@@ -313,7 +222,7 @@ var FourD = function(){
     edge.paint(this.scene);
     return edge;
   };
-
+  
   // api
   Graph.prototype.remove_edge = function(edge){
     var key = this._make_key(edge.source, edge.target);
@@ -322,14 +231,14 @@ var FourD = function(){
       delete this.E[edge.id];
     }
   };
-
+  
   Graph.prototype.toString = function(){
     var edges = Object.keys(this.E).length;
     var nodes = Object.keys(this.V).length;
 
     return '|V|: ' + nodes.toString() + ',  |E|: ' + edges.toString();
   };
-
+  
   // api
   Graph.prototype.remove_vertex = function(vertex){
     for(var e in vertex.edges){
@@ -340,26 +249,9 @@ var FourD = function(){
     this.scene.remove(vertex.object);
     delete this.V[vertex.id];
   };
-
-  var is_graph = function(potential){
-    return potential.type === 'Graph';
-  };
-
-  // apiish
+  
+  // api-ish
   var Cube = function(options){
-    if(options === undefined){
-      options = {};
-    }
-    
-    if(options.width === undefined){
-      options.width = 3;
-    }
-    if(options.height === undefined){
-      options.height = 3;
-    }
-    if(options.depth === undefined){
-      options.depth = 3;
-    }
     if(options.color === undefined){
       options.color = 0x00ccaa;
     }
@@ -370,116 +262,33 @@ var FourD = function(){
     
     var geometry, material, material_args;
     geometry = new THREE.BoxGeometry(
-      options.width,
-      options.height,
-      options.depth
+      options.size,
+      options.size,
+      options.size
     );
     geometry.dynamic = true;
     
     if(options.texture !== undefined){
-      material_args = { 
-        map: new THREE.TextureLoader().load( options.texture )
-      };
-      
+      material_args = {map: THREE.ImageUtils.loadTexture( options.texture )};
     }else{
-      material_args = { 
-        color: options.color,
-        wireframe: true
-      };
+      material_args = {color: options.color, wireframe: true};
     }
 
     material = new THREE.MeshBasicMaterial( material_args );
     
     var cube = new THREE.Mesh( geometry, material );
-    var scale = 2;
+    //var scale = 2;
     cube.position.set(
-      Math.random() * scale, 
-      Math.random() * scale,
+      Math.random(),// * scale, 
+      Math.random(),// * scale,
       Math.random() * scale
     );
     cube.matrixAutoUpdate = true;
     
+    scene.add(cube);
     return cube;
   };
   
-  /*
-    todo: a streamlined system for extracting options. 
-    
-    specifically:
-      vertex_options.label and edge_options.label should be
-      the same, and the label option should not conflict with 
-      vertex- or edge- options.
-      
-    This system could be called an option extractor. I see a 
-    stream of options being passed through the vertex and edge
-    constructors and painters that takes the appropriate parts 
-    of the options and applies them to the correct part in the 
-    taxonomy of objects, i.e. vertex or label, or edge or label.
-  */
-  
-  /*
-    THREE.Sprite Label(parameters)
-  
-    label
-    creates a label that can be added to a vertex or an edge.
-    
-    parameters
-    - text
-    - font_family      // optional: 'Arial'
-    - font_size        // optional: 12
-    - sprite_alignment // optional: top left
-    
-    returns
-    a sprite
-  */
-  /*
-  var Label = function( parameters ){
-    if( parameters === undefined ){
-      parameters = {};
-    }
-    
-    if(!parameters.text === undefined){
-      throw "Can't do a label without some text";
-    }
-    
-    var font_family = parameters.hasOwnProperty('font_family') ? 
-      parameters['font_family'] : 'Arial';
-    var font_size = parameters.hasOwnProperty('font_size') ? 
-      parameters['font_size'] : 12;
-    // border thickness
-    // border color
-    // background color
-    
-    var canvas = document.createElement('canvas');
-    var context = canvas.getContext('2d');
-    context.font = "Bold " + font_size + "px " + font_family;
-    
-    // get size data (height depends only on font size)
-    var metrics = context.measureText(parameters.text);
-    var text_width = metrics.width;
-    //context.fillStyle = "rgba(0,0,0,0)";
-    //context.strokeStyle = "rgba(0,0,0,0)";
-    
-    //context.lineWidth = 0;
-    context.fillStyle = "rgba(0, 0, 0, 1.0)";
-    context.fillText(parameters.text ? parameters.text : '', 1, font_size);
-    
-    var texture = new THREE.Texture(canvas);
-    texture.needsUpdate = true;
-    
-    var sprite_material = new THREE.SpriteMaterial(
-      {
-        map: texture
-      }
-    );
-    
-    var sprite = new THREE.Sprite( sprite_material );
-    // sprite.scale.set(100, 50, 1.0);
-
-    return sprite;
-  };
-  */
-
   // apiish this will change
   // todo: make line options like cube options
   var line = function(scene, source, target){
@@ -496,26 +305,32 @@ var FourD = function(){
     scene.add(line);
     return line;
   };
-
+  
   var BHN3 = function(){
     this.inners = [];
     this.outers = {};
     this.center_sum = new THREE.Vector3(0, 0, 0);
     this.center_count = 0;
   };
-
-  BHN3.prototype.constants = CONSTANTS.BHN3;
-
+  
+  var BHN3 = function(){
+    this.inners = [];
+    this.outers = {};
+    this.center_sum = new THREE.Vector3(0, 0, 0);
+    this.center_count = 0;
+    this.furthest = 0;
+  };
+  
   BHN3.prototype.center = function(){
     return this.center_sum.clone().divideScalar(this.center_count);
   };
-
+  
   BHN3.prototype.place_inner = function(vertex){
     this.inners.push(vertex);
     this.center_sum.add(vertex.object.position);
     this.center_count += 1;
   };
-
+  
   BHN3.prototype.get_octant = function(position){
     var center = this.center();
     var x = center.x < position.x ? 'l' : 'r';
@@ -523,13 +338,18 @@ var FourD = function(){
     var z = center.z < position.z ? 'i' : 'o';
     return x + y + z;
   };
-
+  
   BHN3.prototype.place_outer = function(vertex){
     var octant = this.get_octant(vertex.object.position);
     this.outers[octant] = this.outers[octant] || new BHN3();
     this.outers[octant].insert(vertex);
+    
+    var distance_from_center = vertex.object.position.distanceTo(this.center);
+    if(distance_from_center > this.furthest){ // can i get away with not calling center again?
+      
+    } 
   };
-
+  
   BHN3.prototype.insert = function(vertex){
     if(this.inners.length === 0){
       this.place_inner(vertex);
@@ -541,7 +361,7 @@ var FourD = function(){
       }
     }
   };
-
+  
   BHN3.prototype.estimate = function(vertex, force, force_fn){
     if(this.inners.indexOf(vertex) > -1){
       for(var i=0; i<this.inners.length; i++){
@@ -550,7 +370,7 @@ var FourD = function(){
             vertex.object.position.clone(),
             this.inners[i].object.position.clone()
           );
-	  
+          
           force.add(individual_force);
         }
       }
@@ -564,7 +384,7 @@ var FourD = function(){
       this.outers[octant].estimate(vertex, force, force_fn);
     }
   };
-
+  
   BHN3.prototype.pairwise_repulsion = function( x1, x2 ){
 
     var enumerator1, denominator1, 
@@ -684,15 +504,14 @@ var FourD = function(){
       light,
       renderer,
       graph,
-      controls,
-      clock;
+      clock,
+      controls;
 
   var render = function render(){
     requestAnimationFrame(render);
     graph.layout();
     controls.update(clock.getDelta());
     renderer.render(scene, camera);
-    
     //camera.position.z = graph.center.z - CONSTANTS.zoom;
     //camera.lookAt(graph.center);
   };
@@ -724,24 +543,22 @@ var FourD = function(){
     renderer.setClearColor(0xefefef);
     renderer.setSize( options.width, options.height );
     
-    THREEx.WindowResize(renderer, camera);
-    
     document.querySelector(selector).appendChild( renderer.domElement );
     
     graph = new Graph(scene);
     
     camera.position.z = -250;
     camera.lookAt(new THREE.Vector3(0, 0, 0));
-
+    
     clock = new THREE.Clock();
     controls = new THREE.FlyControls( camera );
     controls.update(clock.getDelta()); 
     controls.movementSpeed = 100;
 		controls.domElement = renderer.domElement;
-		controls.rollSpeed = Math.PI / 6;
+		controls.rollSpeed = Math.PI / 12;
 		controls.autoForward = false;
 		controls.dragToLook = true;
-    
+
     that._internals = {
       scene: scene,
       element: element,

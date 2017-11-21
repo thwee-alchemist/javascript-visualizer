@@ -18,12 +18,16 @@
 		var ast = esprima.parseScript(text);
 		var vertex;
 		walk(ast, function(node){
-			node.vertex = fourd.graph.add_vertex({cube: {
-				width: 10, 
-				height: 10, 
-				depth: 10,
-				texture: 'img/gear.png'
-			}});
+			node.vertex = fourd.graph.add_vertex(
+      { 
+        cube: {
+          size: 10,
+          texture: 'img/gear.png'
+        }, 
+        label: {
+          text: node.type
+        }
+      });
 			
 			if(node.parent){
 				fourd.graph.add_edge(node.vertex, node.parent.vertex);
