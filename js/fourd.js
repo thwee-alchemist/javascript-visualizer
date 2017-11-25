@@ -43,9 +43,7 @@
  // or:
  
  var vertex_options = {
-   width: 5,
-   height: 5,
-   depth: 5,
+   size: 10,
    texture: 'path_to,png'
  }
  
@@ -73,16 +71,16 @@ var FourD = function(){
   var that = this;
   var CONSTANTS = {
     width: 1000,
-    attraction: 0.05,
-    far: 1000,
+    attraction: 0.1,
+    far: 10000,
     optimal_distance: 1.0,
     minimum_velocity: 0.001,
     friction: 0.60,
     zoom: -50,
 
     BHN3: {
-      inner_distance: 0.036,
-      repulsion: 100.0,
+      inner_distance: 0.36,
+      repulsion: 50.0,
       epsilon: 0.1
     }
   };
@@ -136,7 +134,7 @@ var FourD = function(){
     var canvas = document.createElement('canvas');
     var context = canvas.getContext('2d');
     var fontSize = options.size || 100;
-    context.font = fontSize + "px Times New Roman";
+    context.font = fontSize + "px Consolas";
     var measurements = context.measureText(options.text);
     //canvas.width = measurements.width + 10;
     //canvas.height = fontSize + 2;
@@ -401,84 +399,6 @@ var FourD = function(){
     
     return cube;
   };
-  
-  /*
-    todo: a streamlined system for extracting options. 
-    
-    specifically:
-      vertex_options.label and edge_options.label should be
-      the same, and the label option should not conflict with 
-      vertex- or edge- options.
-      
-    This system could be called an option extractor. I see a 
-    stream of options being passed through the vertex and edge
-    constructors and painters that takes the appropriate parts 
-    of the options and applies them to the correct part in the 
-    taxonomy of objects, i.e. vertex or label, or edge or label.
-  */
-  
-  /*
-    THREE.Sprite Label(parameters)
-  
-    label
-    creates a label that can be added to a vertex or an edge.
-    
-    parameters
-    - text
-    - font_family      // optional: 'Arial'
-    - font_size        // optional: 12
-    - sprite_alignment // optional: top left
-    
-    returns
-    a sprite
-  */
-  /*
-  var Label = function( parameters ){
-    if( parameters === undefined ){
-      parameters = {};
-    }
-    
-    if(!parameters.text === undefined){
-      throw "Can't do a label without some text";
-    }
-    
-    var font_family = parameters.hasOwnProperty('font_family') ? 
-      parameters['font_family'] : 'Arial';
-    var font_size = parameters.hasOwnProperty('font_size') ? 
-      parameters['font_size'] : 12;
-    // border thickness
-    // border color
-    // background color
-    
-    var canvas = document.createElement('canvas');
-    var context = canvas.getContext('2d');
-    context.font = "Bold " + font_size + "px " + font_family;
-    
-    // get size data (height depends only on font size)
-    var metrics = context.measureText(parameters.text);
-    var text_width = metrics.width;
-    //context.fillStyle = "rgba(0,0,0,0)";
-    //context.strokeStyle = "rgba(0,0,0,0)";
-    
-    //context.lineWidth = 0;
-    context.fillStyle = "rgba(0, 0, 0, 1.0)";
-    context.fillText(parameters.text ? parameters.text : '', 1, font_size);
-    
-    var texture = new THREE.Texture(canvas);
-    texture.needsUpdate = true;
-    
-    var sprite_material = new THREE.SpriteMaterial(
-      {
-        map: texture
-      }
-    );
-    
-    var sprite = new THREE.Sprite( sprite_material );
-    // sprite.scale.set(100, 50, 1.0);
-
-    return sprite;
-  };
-  */
 
   // apiish this will change
   // todo: make line options like cube options
@@ -685,16 +605,20 @@ var FourD = function(){
       renderer,
       graph,
       controls,
-      clock;
-
+      clock, 
+      raycaster,
+      mouse,
+      intersects;
+      
+  var old_intersects,
+      old_color;
   var render = function render(){
     requestAnimationFrame(render);
+
     graph.layout();
     controls.update(clock.getDelta());
-    renderer.render(scene, camera);
     
-    //camera.position.z = graph.center.z - CONSTANTS.zoom;
-    //camera.lookAt(graph.center);
+    renderer.render(scene, camera);
   };
 
   var clear = function clear(){
@@ -736,11 +660,29 @@ var FourD = function(){
     clock = new THREE.Clock();
     controls = new THREE.FlyControls( camera );
     controls.update(clock.getDelta()); 
-    controls.movementSpeed = 100;
+    controls.movementSpeed = 500;
 		controls.domElement = renderer.domElement;
 		controls.rollSpeed = Math.PI / 6;
 		controls.autoForward = false;
 		controls.dragToLook = true;
+    
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+    
+    function onMouseMove(event){
+      mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+      mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+    }
+    window.addEventListener('mousemove', onMouseMove, false);
+    
+    function onMouseClick(event){
+      raycaster.setFromCamera(mouse, camera);
+      intersects = raycaster.intersectObjects(scene.children);
+      if(intersects.length > 0){
+        intersects[0].object.children[0].material.color.set(0xff0000);
+      }
+    }
+    window.addEventListener('mouseclick', onMouseClick, false);
     
     that._internals = {
       scene: scene,
@@ -748,7 +690,12 @@ var FourD = function(){
       camera: camera,
       light: light,
       renderer: renderer,
-      graph: graph
+      graph: graph,
+      controls: controls,
+      clock: clock, 
+      raycaster: raycaster,
+      mouse: mouse,
+      intersects: intersects
     };
 
     // api

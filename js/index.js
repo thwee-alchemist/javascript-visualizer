@@ -22,10 +22,11 @@
       { 
         cube: {
           size: 10,
-          texture: 'img/gear.png'
+          //texture: 'img/gear.png'
         }, 
         label: {
-          text: node.type
+          text: node.type,
+          size: 50
         }
       });
 			
