@@ -412,6 +412,7 @@ var FourD = function(){
     var material = new THREE.LineBasicMaterial({ color: 0x000000 });
     
     var line = new THREE.Line( geometry, material );
+    line.frustumCulled = false;
       
     scene.add(line);
     return line;
